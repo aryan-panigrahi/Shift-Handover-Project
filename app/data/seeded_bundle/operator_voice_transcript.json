@@ -1,0 +1,25 @@
+{
+  "text": "Marco (Outgoing Operator Shift B): Shift handover memo for Hydraulic Press 07 at 13:20. We noticed an intermittent high-pitch whine around the main heat exchanger, and the motor casing felt hot to touch around 10:30. Keep an eye on the cooling circuit, and check the line pressure if vibration spikes again. Filter cartridge was replaced earlier on Shift A.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 4.5,
+      "text": "Marco (Outgoing Operator Shift B): Shift handover memo for Hydraulic Press 07 at 13:20.",
+      "speaker": "Marco"
+    },
+    {
+      "start": 4.5,
+      "end": 12.0,
+      "text": "We noticed an intermittent high-pitch whine around the main heat exchanger, and the motor casing felt hot to touch around 10:30.",
+      "speaker": "Marco"
+    },
+    {
+      "start": 12.0,
+      "end": 18.5,
+      "text": "Keep an eye on the cooling circuit, and check the line pressure if vibration spikes again. Filter cartridge was replaced earlier on Shift A.",
+      "speaker": "Marco"
+    }
+  ],
+  "confidence": 0.94,
+  "engine": "Built-in Industrial Acoustic Adapter (ROCm compatible)"
+}

@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  shift-handover-briefing:
+    build: .
+    container_name: shift-handover-briefing
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - AMD_ENDPOINT_URL=${AMD_ENDPOINT_URL:-}
+      - AMD_API_KEY=${AMD_API_KEY:-}
+      - AMD_MODEL_ID=${AMD_MODEL_ID:-meta-llama/Llama-3.1-70B-Instruct}
+    volumes:
+      - ./app/data:/app/app/data
+    restart: unless-stopped

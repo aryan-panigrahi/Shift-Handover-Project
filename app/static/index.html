@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shift Handover Briefing — AMD Intelligent Industry</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-theme">
+
+  <!-- Top Navigation & AMD ROCm Bar -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand-badge">
+        <span class="amd-icon">▲</span>
+        <div class="brand-titles">
+          <span class="brand-pre">AMD INTELLIGENT INDUSTRY</span>
+          <h1 class="brand-name">Shift Handover Briefing</h1>
+        </div>
+      </div>
+      <div class="asset-selector-pill">
+        <span class="asset-icon">⚙️</span>
+        <div class="asset-details">
+          <span class="asset-label">TARGET ASSET</span>
+          <span class="asset-val" id="assetDisplayName">Hydraulic Press 07 (HP-750)</span>
+        </div>
+        <span class="shift-badge" id="shiftBadge">Shift B (06:00 – 14:00)</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Live AMD Health Badge -->
+      <button class="amd-status-pill" id="amdStatusBtn" onclick="openAmdModal()" title="View AMD Inference Diagnostics">
+        <span class="pulse-dot" id="amdPulseDot"></span>
+        <span class="amd-status-label" id="amdStatusText">Probing AMD ROCm...</span>
+        <span class="amd-latency-tag" id="amdLatencyTag">-- ms</span>
+      </button>
+
+      <!-- Global Actions -->
+      <button class="btn btn-primary" id="btnLoadDemo" onclick="loadDemoBundle()">
+        <span class="btn-icon">⚡</span> Load Demo Bundle
+      </button>
+      <button class="btn btn-outline" id="btnRunBenchmark" onclick="runBenchmark()">
+        <span class="btn-icon">📊</span> Benchmark
+      </button>
+      <button class="btn btn-outline" id="btnExportMd" onclick="exportMarkdown()">
+        <span class="btn-icon">📥</span> Export .MD
+      </button>
+      <button class="btn btn-ghost" id="btnReset" onclick="resetSession()" title="Clear session data">
+        <span class="btn-icon">🗑️</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Telemetry Headline Ticker -->
+  <section class="telemetry-deck">
+    <div class="telemetry-card alert-critical">
+      <div class="telemetry-header">
+        <span class="telemetry-name">MOTOR TEMPERATURE</span>
+        <span class="telemetry-status-tag tag-critical">TRIP EXCEEDED</span>
+      </div>
+      <div class="telemetry-body">
+        <span class="telemetry-value" id="valMotorTemp">91.4</span>
+        <span class="telemetry-unit">°C</span>
+        <span class="telemetry-delta">+6.4°C above 85.0°C limit</span>
+      </div>
+      <div class="telemetry-sparkline" id="sparkMotor">
+        <div class="spark-bar" style="height: 40%"></div>
+        <div class="spark-bar" style="height: 55%"></div>
+        <div class="spark-bar alert" style="height: 80%"></div>
+        <div class="spark-bar" style="height: 60%"></div>
+        <div class="spark-bar alert" style="height: 85%"></div>
+        <div class="spark-bar" style="height: 65%"></div>
+        <div class="spark-bar alert-crit" style="height: 100%"></div>
+      </div>
+    </div>
+
+    <div class="telemetry-card alert-warning">
+      <div class="telemetry-header">
+        <span class="telemetry-name">VIBRATION RMS</span>
+        <span class="telemetry-status-tag tag-warning">SURGE SPIKE</span>
+      </div>
+      <div class="telemetry-body">
+        <span class="telemetry-value" id="valVibRms">4.8</span>
+        <span class="telemetry-unit">mm/s</span>
+        <span class="telemetry-delta">+0.3 over 4.5 mm/s alarm</span>
+      </div>
+      <div class="telemetry-sparkline" id="sparkVib">
+        <div class="spark-bar" style="height: 35%"></div>
+        <div class="spark-bar" style="height: 38%"></div>
+        <div class="spark-bar" style="height: 32%"></div>
+        <div class="spark-bar alert" style="height: 95%"></div>
+        <div class="spark-bar" style="height: 45%"></div>
+        <div class="spark-bar" style="height: 40%"></div>
+        <div class="spark-bar" style="height: 42%"></div>
+      </div>
+    </div>
+
+    <div class="telemetry-card">
+      <div class="telemetry-header">
+        <span class="telemetry-name">HYDRAULIC PRESSURE</span>
+        <span class="telemetry-status-tag tag-normal">TRANSIENT DROP</span>
+      </div>
+      <div class="telemetry-body">
+        <span class="telemetry-value" id="valPressure">162.0</span>
+        <span class="telemetry-unit">bar</span>
+        <span class="telemetry-delta">Recovered to 208 bar nominal</span>
+      </div>
+      <div class="telemetry-sparkline" id="sparkPressure">
+        <div class="spark-bar" style="height: 85%"></div>
+        <div class="spark-bar" style="height: 85%"></div>
+        <div class="spark-bar alert-dip" style="height: 45%"></div>
+        <div class="spark-bar" style="height: 88%"></div>
+        <div class="spark-bar" style="height: 82%"></div>
+        <div class="spark-bar" style="height: 86%"></div>
+        <div class="spark-bar" style="height: 84%"></div>
+      </div>
+    </div>
+
+    <div class="telemetry-card data-coverage-card">
+      <div class="telemetry-header">
+        <span class="telemetry-name">COVERAGE & EVIDENCE</span>
+        <span class="telemetry-status-tag tag-info">4 MULTIMODAL SOURCES</span>
+      </div>
+      <div class="coverage-metrics">
+        <div class="metric-col">
+          <span class="metric-num" id="metricSources">4</span>
+          <span class="metric-lbl">Sources</span>
+        </div>
+        <div class="metric-col">
+          <span class="metric-num" id="metricEvents">16</span>
+          <span class="metric-lbl">Events</span>
+        </div>
+        <div class="metric-col">
+          <span class="metric-num" id="metricCitations">100%</span>
+          <span class="metric-lbl">Grounded</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab Bar Navigation -->
+  <nav class="app-tabs">
+    <button class="tab-btn active" onclick="switchTab('handoverTab')">
+      <span class="tab-icon">📋</span> Prioritized Handover Briefing
+      <span class="tab-badge" id="tabItemsBadge">4</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('timelineTab')">
+      <span class="tab-icon">⏱️</span> Event Chronology Timeline
+      <span class="tab-badge" id="tabEventsBadge">16</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('sourcesTab')">
+      <span class="tab-icon">📁</span> Ingested Sources & Audio Memo
+      <span class="tab-badge" id="tabSourcesBadge">4</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('manualTab')">
+      <span class="tab-icon">📖</span> Equipment Manual (IFS HP-750)
+      <span class="tab-badge">4 Sections</span>
+    </button>
+  </nav>
+
+  <!-- Main Work Area -->
+  <main class="app-main">
+
+    <!-- TAB 1: Handover Briefing -->
+    <section class="tab-content active" id="handoverTab">
+      
+      <!-- Safety Boundary Banner -->
+      <div class="safety-banner">
+        <span class="safety-icon">🛡️</span>
+        <div class="safety-content">
+          <strong>Decision-Support Notice:</strong> This briefing synthesizes verified sensor logs, technician notes, operator audio, and manual SOPs on AMD ROCm. It assists operator handover and does <em>not</em> issue automated machine controls or override approved safety procedures.
+        </div>
+        <div class="safety-meta" id="handoverMetaPill">
+          Model: meta-llama/Llama-3.1-70B • Latency: 1.42s
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="handover-toolbar">
+        <div class="toolbar-left">
+          <h2>Prioritized Operational Briefing</h2>
+          <span class="toolbar-sub">Ranked by transparent heuristic (severity, repetition, deviation, recency, operator concern)</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-sm btn-outline" onclick="generateHandover()">
+            <span>⚡</span> Re-Synthesize on AMD
+          </button>
+        </div>
+      </div>
+
+      <!-- Handover Items List -->
+      <div class="handover-list" id="handoverItemsContainer">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Unresolved Questions / Safety Follow-ups -->
+      <div class="unresolved-card" id="unresolvedContainer">
+        <div class="unresolved-header">
+          <span class="unresolved-icon">⚠️</span>
+          <h3>Unresolved Observations & Human Review Needed</h3>
+        </div>
+        <ul class="unresolved-list" id="unresolvedList">
+          <!-- Rendered dynamically -->
+        </ul>
+      </div>
+    </section>
+
+    <!-- TAB 2: Event Chronology Timeline -->
+    <section class="tab-content" id="timelineTab">
+      <div class="timeline-toolbar">
+        <div class="toolbar-left">
+          <h2>Shift B Event Chronology</h2>
+          <span class="toolbar-sub">Normalized multi-source machine telemetry and observations</span>
+        </div>
+        <div class="timeline-filters" id="timelineFilters">
+          <button class="filter-pill active" onclick="filterTimeline('all')">All (16)</button>
+          <button class="filter-pill" onclick="filterTimeline('threshold_exceeded')">Exceedances</button>
+          <button class="filter-pill" onclick="filterTimeline('alarm')">Alarms</button>
+          <button class="filter-pill" onclick="filterTimeline('operator_observation')">Operator Voice</button>
+          <button class="filter-pill" onclick="filterTimeline('maintenance')">Maintenance</button>
+        </div>
+      </div>
+
+      <div class="timeline-track" id="timelineTrackContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: Ingested Sources & Audio Memo -->
+    <section class="tab-content" id="sourcesTab">
+      <div class="sources-grid">
+        
+        <!-- Left: Upload Box -->
+        <div class="sources-col">
+          <div class="panel-card">
+            <h3>Upload New Equipment Data</h3>
+            <p class="panel-desc">Ingest CSV/JSON telemetry, Markdown/TXT notes, audio memo (.wav/.mp3), or PDF manuals.</p>
+
+            <form class="upload-dropzone" id="uploadForm" onsubmit="handleUpload(event)">
+              <input type="file" id="fileInput" required class="file-input-hidden" onchange="updateFileName(this)">
+              <div class="dropzone-content" onclick="document.getElementById('fileInput').click()">
+                <span class="dropzone-icon">📤</span>
+                <span class="dropzone-text" id="dropzoneText">Drag files here or <strong>browse</strong></span>
+                <span class="dropzone-types">CSV, JSON, MD, TXT, PDF, WAV</span>
+              </div>
+              
+              <div class="upload-options">
+                <div class="form-row">
+                  <label for="uploadKind">Source Kind:</label>
+                  <select id="uploadKind" class="form-select">
+                    <option value="">Auto-detect from format</option>
+                    <option value="machine_log">Machine Telemetry (CSV/JSON)</option>
+                    <option value="maintenance_note">Maintenance Note (MD/TXT)</option>
+                    <option value="operator_audio">Operator Voice Memo (WAV/MP3)</option>
+                    <option value="manual">Equipment Manual (PDF/MD)</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block" id="btnUploadSubmit">
+                Process & Ingest Document
+              </button>
+            </form>
+          </div>
+
+          <!-- Operator Audio Player Card -->
+          <div class="panel-card audio-panel" id="audioMemoPanel">
+            <div class="audio-panel-header">
+              <span class="audio-icon">🎙️</span>
+              <div>
+                <h4>Operator Voice Memo (Outgoing Shift B)</h4>
+                <span class="audio-meta">Speaker: Marco • Captured: 13:20</span>
+              </div>
+            </div>
+
+            <!-- HTML5 Audio Controller -->
+            <div class="audio-player-wrapper">
+              <audio id="audioPlayer" controls preload="metadata" style="width: 100%;">
+                <source src="/api/sources/src-audio-memo-marco/download" type="audio/wav">
+                Your browser does not support audio playback.
+              </audio>
+            </div>
+
+            <!-- Waveform Canvas -->
+            <canvas id="waveformCanvas" class="waveform-canvas" width="400" height="48"></canvas>
+
+            <div class="transcript-box">
+              <div class="transcript-header">
+                <span>Verified Transcript (Confidence 94%)</span>
+                <span class="transcript-model">Speech-to-Text Adapter</span>
+              </div>
+              <p class="transcript-text" id="transcriptText">
+                "Marco (Outgoing Operator Shift B): Shift handover memo for Hydraulic Press 07 at 13:20. We noticed an intermittent high-pitch whine around the main heat exchanger, and the motor casing felt hot to touch around 10:30. Keep an eye on the cooling circuit, and check the line pressure if vibration spikes again. Filter cartridge was replaced earlier on Shift A."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Ingested Documents List -->
+        <div class="sources-col">
+          <div class="panel-card">
+            <h3>Ingested Source Records</h3>
+            <div class="sources-list" id="sourcesListContainer">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 4: Manual & SOP Knowledge Base -->
+    <section class="tab-content" id="manualTab">
+      <div class="manual-viewer">
+        <div class="manual-sidebar">
+          <h3>IFS HP-750 Operating Manual</h3>
+          <span class="manual-sub">Indexed SOP Passages with stable page/section anchors</span>
+          <div class="manual-nav" id="manualNav">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+        <div class="manual-display" id="manualDisplay">
+          <div class="manual-passage-view" id="manualPassageContent">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Evidence Inspector Drawer / Modal -->
+  <div class="modal-overlay" id="evidenceModal" onclick="closeEvidenceModal(event)">
+    <div class="modal-card modal-evidence">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-badge">EVIDENCE VERIFIER</span>
+          <h3 id="evidenceTitle">Source Evidence Details</h3>
+        </div>
+        <button class="modal-close" onclick="closeEvidenceModalDirect()">✕</button>
+      </div>
+      <div class="modal-body" id="evidenceBody">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer">
+        <span class="evidence-grounded-note">✓ Factual claim linked to immutable source provenance</span>
+        <button class="btn btn-outline" onclick="closeEvidenceModalDirect()">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Evaluation Modal -->
+  <div class="modal-overlay" id="benchmarkModal" onclick="closeBenchmarkModal(event)">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-badge-amd">HACKATHON EVALUATION SUITE</span>
+          <h3>Shift Handover Benchmark Report</h3>
+        </div>
+        <button class="modal-close" onclick="closeBenchmarkModalDirect()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="benchmark-intro">
+          10 Labeled Ground Truth Test Cases for Hydraulic Press 07 evaluating factual citation integrity, high-priority recall, and unsupported-claim rate (RISKS_AND_EVALUATION.md).
+        </p>
+
+        <!-- Benchmark Scorecards -->
+        <div class="benchmark-scorecards" id="benchmarkScorecards">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Detailed Test Case Table -->
+        <div class="benchmark-table-wrapper">
+          <table class="benchmark-table">
+            <thead>
+              <tr>
+                <th>Case ID</th>
+                <th>Test Scenario</th>
+                <th>Expected Priority</th>
+                <th>Actual Priority</th>
+                <th>Citation Valid</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="benchmarkTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeBenchmarkModalDirect()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AMD Endpoint Diagnostics Modal -->
+  <div class="modal-overlay" id="amdModal" onclick="closeAmdModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-row">
+          <span class="modal-badge-amd">AMD ROCm DIAGNOSTICS</span>
+          <h3>AMD GPU Inference Configuration</h3>
+        </div>
+        <button class="modal-close" onclick="closeAmdModalDirect()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="amd-info-box" id="amdDiagInfo">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <form class="amd-config-form" onsubmit="testAmdEndpoint(event)">
+          <div class="form-group">
+            <label for="cfgAmdUrl">AMD Model Endpoint URL (vLLM / TGI / ROCm):</label>
+            <input type="text" id="cfgAmdUrl" class="form-input" placeholder="https://amd-developer-cloud.example.com/v1">
+          </div>
+          <div class="form-group">
+            <label for="cfgAmdModel">Model Identifier:</label>
+            <input type="text" id="cfgAmdModel" class="form-input" value="meta-llama/Llama-3.1-70B-Instruct">
+          </div>
+          <div class="form-group">
+            <label for="cfgAmdKey">AMD Cloud API Key (Optional):</label>
+            <input type="password" id="cfgAmdKey" class="form-input" placeholder="Bearer token...">
+          </div>
+          <button type="submit" class="btn btn-outline" id="btnTestAmd">
+            Test AMD Endpoint Connection
+          </button>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeAmdModalDirect()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
