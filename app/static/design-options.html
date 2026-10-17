@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shift Handover — Design Directions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #26313a;
+      --muted: #68737c;
+      --paper: #f4f0e8;
+      --card: #fffdf8;
+      --line: #ded6c8;
+      --red: #bd5961;
+      --sage: #5b8a77;
+      --blue: #5d83a5;
+      --night: #111923;
+      --night-card: #1a2530;
+      --lime: #c7e879;
+      --violet: #9c90d4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, #e3dcf1 0, transparent 26%),
+        radial-gradient(circle at 95% 12%, #d8eadf 0, transparent 24%),
+        var(--paper);
+      font-family: "DM Sans", sans-serif;
+    }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 54px 28px 80px; }
+    .eyebrow { color: var(--red); font: 700 12px "DM Mono", monospace; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { max-width: 740px; margin: 12px 0 10px; font: 600 clamp(42px, 7vw, 82px)/.94 Fraunces, serif; letter-spacing: -.045em; }
+    .intro { max-width: 640px; color: var(--muted); font-size: 17px; line-height: 1.65; }
+    .directions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 46px; }
+    .direction { overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: rgba(255,253,248,.75); box-shadow: 0 18px 50px rgba(74,62,45,.08); }
+    .preview { min-height: 410px; padding: 18px; }
+    .direction-body { padding: 22px 22px 24px; border-top: 1px solid var(--line); }
+    h2 { margin: 0 0 8px; font: 600 26px Fraunces, serif; }
+    .description { min-height: 72px; color: var(--muted); line-height: 1.55; font-size: 14px; }
+    .tag { display: inline-block; margin: 0 4px 6px 0; padding: 5px 8px; border-radius: 6px; background: #eee9df; color: var(--muted); font: 11px "DM Mono", monospace; }
+    .choose { width: 100%; margin-top: 14px; padding: 12px 15px; border: 0; border-radius: 9px; background: var(--ink); color: white; font-weight: 700; cursor: pointer; }
+    .choose:hover { background: #465660; }
+    .mini-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 26px; }
+    .mini-brand { font: 600 20px Fraunces, serif; }
+    .mini-chip { padding: 7px 9px; border-radius: 99px; background: #edf4ef; color: var(--sage); font: 10px "DM Mono", monospace; }
+    .mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .mini-stat { min-height: 96px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: #fffdfa; }
+    .mini-stat.alert { border-left: 4px solid var(--red); }
+    .mini-stat.info { border-left: 4px solid var(--blue); }
+    .mini-label { color: var(--muted); font: 10px "DM Mono", monospace; text-transform: uppercase; }
+    .mini-value { margin-top: 14px; font: 600 27px Fraunces, serif; }
+    .mini-brief { margin-top: 12px; padding: 16px; border-radius: 12px; background: #eef3f8; }
+    .mini-line { height: 7px; margin: 8px 0; border-radius: 99px; background: #c5d0dc; }
+    .mini-line.short { width: 62%; }
+    .mission { background: var(--night); color: #edf3f3; }
+    .mission .preview { background: linear-gradient(145deg, #152231, #101820); }
+    .mission .mini-brand { color: white; font: 700 17px "Manrope", sans-serif; letter-spacing: -.04em; }
+    .mission .mini-chip { background: rgba(199,232,121,.13); color: var(--lime); }
+    .mission .mini-stat { border-color: #354451; background: #1c2935; }
+    .mission .mini-label { color: #91a0a8; }
+    .mission .mini-value { color: var(--lime); font: 700 28px "Space Mono", monospace; }
+    .mission .mini-stat.alert { border-left-color: #ff7b78; }
+    .mission .mini-stat.info { border-left-color: #78c7ff; }
+    .mission .mini-brief { background: #233441; }
+    .mission .mini-line { background: #496171; }
+    .mission .direction-body { border-color: #354451; background: var(--night-card); }
+    .mission h2 { color: white; font-family: "Manrope", sans-serif; }
+    .mission .description { color: #aab8bf; }
+    .mission .tag { background: #263744; color: #a8bac2; }
+    .mission .choose { background: var(--lime); color: #17211b; }
+    .violet { background: #f5f2fb; }
+    .violet .preview { background: linear-gradient(145deg, #eeeafa, #fbfafc); }
+    .violet .mini-brand { color: #514877; }
+    .violet .mini-chip { background: #e9e4fa; color: #6b5cad; }
+    .violet .mini-stat { border: 0; box-shadow: 0 8px 20px rgba(101,87,153,.09); }
+    .violet .mini-stat.alert { border-left: 4px solid #d58296; }
+    .violet .mini-stat.info { border-left: 4px solid var(--violet); }
+    .violet .mini-brief { background: #e8e2f8; }
+    .violet .mini-line { background: #c9c0e5; }
+    .violet .direction-body { border-color: #ddd5f0; }
+    .violet h2 { color: #514877; }
+    .violet .choose { background: #655a9a; }
+    .footer-note { margin-top: 34px; color: var(--muted); font: 12px "DM Mono", monospace; }
+    @media (max-width: 900px) { .directions { grid-template-columns: 1fr; max-width: 520px; } .preview { min-height: 340px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="eyebrow">Shift Handover / Design Lab</div>
+    <h1>Choose the visual language for your control room.</h1>
+    <p class="intro">Three directions for the same evidence-linked handover product. The data, APIs, citations, benchmark, and operator workflow stay the same — only the visual point of view changes.</p>
+
+    <section class="directions">
+      <article class="direction">
+        <div class="preview">
+          <div class="mini-top"><div class="mini-brand">Field Notes</div><div class="mini-chip">GROUNDED · 100%</div></div>
+          <div class="mini-grid">
+            <div class="mini-stat alert"><div class="mini-label">Motor temp</div><div class="mini-value">91.4°</div></div>
+            <div class="mini-stat"><div class="mini-label">Vibration</div><div class="mini-value">4.8</div></div>
+            <div class="mini-stat info"><div class="mini-label">Pressure</div><div class="mini-value">162</div></div>
+            <div class="mini-stat"><div class="mini-label">Sources</div><div class="mini-value">04</div></div>
+          </div>
+          <div class="mini-brief"><div class="mini-label">Suggested operator check</div><div class="mini-line"></div><div class="mini-line short"></div></div>
+        </div>
+        <div class="direction-body">
+          <h2>01 — Field Notes</h2>
+          <p class="description">Warm editorial surfaces, human-readable evidence, and calm pastel semantics. Best for shift leads who review details under pressure.</p>
+          <span class="tag">PASTEL</span><span class="tag">EDITORIAL</span><span class="tag">HUMAN-IN-THE-LOOP</span>
+          <button class="choose" onclick="choose('Field Notes')">Choose Field Notes</button>
+        </div>
+      </article>
+
+      <article class="direction mission">
+        <div class="preview">
+          <div class="mini-top"><div class="mini-brand">OPS // 07</div><div class="mini-chip">AMD ONLINE</div></div>
+          <div class="mini-grid">
+            <div class="mini-stat alert"><div class="mini-label">TEMP / TRIP</div><div class="mini-value">91.4°</div></div>
+            <div class="mini-stat"><div class="mini-label">VIB / RMS</div><div class="mini-value">4.8</div></div>
+            <div class="mini-stat info"><div class="mini-label">PRESS / BAR</div><div class="mini-value">162</div></div>
+            <div class="mini-stat"><div class="mini-label">EVIDENCE</div><div class="mini-value">04</div></div>
+          </div>
+          <div class="mini-brief"><div class="mini-label">NEXT OPERATOR ACTION</div><div class="mini-line"></div><div class="mini-line short"></div></div>
+        </div>
+        <div class="direction-body">
+          <h2>02 — Mission Control</h2>
+          <p class="description">Dark, technical, and immediate. A high-contrast operations wall optimized for fast scanning, alarms, and live AMD telemetry.</p>
+          <span class="tag">DARK MODE</span><span class="tag">HIGH SIGNAL</span><span class="tag">TECHNICAL</span>
+          <button class="choose" onclick="choose('Mission Control')">Choose Mission Control</button>
+        </div>
+      </article>
+
+      <article class="direction violet">
+        <div class="preview">
+          <div class="mini-top"><div class="mini-brand">Shift / Brief</div><div class="mini-chip">REVIEW READY</div></div>
+          <div class="mini-grid">
+            <div class="mini-stat alert"><div class="mini-label">Motor temperature</div><div class="mini-value">91.4°</div></div>
+            <div class="mini-stat"><div class="mini-label">Vibration RMS</div><div class="mini-value">4.8</div></div>
+            <div class="mini-stat info"><div class="mini-label">Hydraulic pressure</div><div class="mini-value">162</div></div>
+            <div class="mini-stat"><div class="mini-label">Citations</div><div class="mini-value">100%</div></div>
+          </div>
+          <div class="mini-brief"><div class="mini-label">REVIEW QUEUE</div><div class="mini-line"></div><div class="mini-line short"></div></div>
+        </div>
+        <div class="direction-body">
+          <h2>03 — Quiet Signal</h2>
+          <p class="description">A softer product language with lavender navigation, generous spacing, and a review-queue mindset for thoughtful handovers.</p>
+          <span class="tag">CALM</span><span class="tag">LAVENDER</span><span class="tag">REVIEW QUEUE</span>
+          <button class="choose" onclick="choose('Quiet Signal')">Choose Quiet Signal</button>
+        </div>
+      </article>
+    </section>
+    <p class="footer-note" id="choice">Pick a direction above. Your choice will be recorded on this page.</p>
+  </main>
+  <script>
+    function choose(name) {
+      document.getElementById("choice").textContent = `${name} selected — tell the assistant to apply this direction to the main dashboard.`;
+      document.querySelectorAll(".choose").forEach(button => button.style.opacity = ".55");
+      event.currentTarget.style.opacity = "1";
+    }
+  </script>
+</body>
+</html>

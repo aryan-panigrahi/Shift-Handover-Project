@@ -58,8 +58,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=settings.cors_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -68,12 +68,35 @@ STATIC_DIR = BASE_DIR / "app" / "static"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+def _safe_upload_filename(filename: Optional[str]) -> str:
+    """Return a single path component suitable for storing an uploaded file."""
+    normalized = (filename or "uploaded_file").replace("\\", "/")
+    safe_name = Path(normalized).name.strip()
+    return safe_name or "uploaded_file"
+
+
+def _is_allowed_source_path(filepath: str) -> bool:
+    """Only serve files created inside the seeded bundle or upload directory."""
+    try:
+        resolved = Path(filepath).resolve()
+        allowed_roots = (SEEDED_DIR.resolve(), UPLOADS_DIR.resolve())
+        return any(resolved == root or root in resolved.parents for root in allowed_roots)
+    except (OSError, RuntimeError):
+        return False
+
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     index_file = STATIC_DIR / "index.html"
     if not index_file.exists():
         return HTMLResponse("<h1>Shift Handover Briefing - Starting...</h1>", status_code=200)
     return HTMLResponse(index_file.read_text(encoding="utf-8"))
+
+
+@app.get("/design-options", response_class=HTMLResponse)
+async def serve_design_options():
+    options_file = STATIC_DIR / "design-options.html"
+    return HTMLResponse(options_file.read_text(encoding="utf-8"))
 
 
 # --- API Endpoints ---
@@ -115,8 +138,8 @@ async def download_source(source_id: str):
         raise HTTPException(status_code=404, detail="Source not found")
 
     filepath_str = doc.metadata.get("filepath")
-    if filepath_str and Path(filepath_str).exists():
-        filepath = Path(filepath_str)
+    if filepath_str and _is_allowed_source_path(filepath_str):
+        filepath = Path(filepath_str).resolve()
         media_type = "application/octet-stream"
         if filepath.suffix == ".wav":
             media_type = "audio/wav"
@@ -147,13 +170,21 @@ async def upload_source(
     """
     asset = get_asset(asset_id)
     if not asset:
-        asset = PRESS_07_ASSET
-        upsert_asset(asset)
+        raise HTTPException(status_code=404, detail="Asset not found")
 
-    content_bytes = await file.read()
+    content_bytes = await file.read(settings.max_upload_bytes + 1)
+    if len(content_bytes) > settings.max_upload_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Upload exceeds the {settings.max_upload_bytes // (1024 * 1024)} MB limit"
+        )
+
     content_hash = compute_sha256(content_bytes)
-    filename = file.filename or "uploaded_file"
+    filename = _safe_upload_filename(file.filename)
     file_ext = Path(filename).suffix.lower()
+    allowed_extensions = {".csv", ".json", ".md", ".txt", ".pdf", ".wav", ".mp3", ".m4a", ".webm"}
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=415, detail="Unsupported source file type")
 
     # Determine kind if not supplied
     if not kind:
@@ -165,6 +196,8 @@ async def upload_source(
             kind = "operator_audio"
         else:
             kind = "maintenance_note"
+    if kind not in {"machine_log", "maintenance_note", "manual", "operator_audio"}:
+        raise HTTPException(status_code=422, detail="Unsupported source kind")
 
     source_id = f"src-{uuid.uuid4().hex[:8]}"
     now_iso = captured_at or time.strftime("%Y-%m-%dT%H:%M:%S+02:00")

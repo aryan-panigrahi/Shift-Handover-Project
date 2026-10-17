@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shift Handover Briefing — AMD Intelligent Industry</title>
+  <title>Shift Handover Briefing — Field Notes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css?v=2">
 </head>
 <body class="dark-theme">
 
@@ -15,14 +15,14 @@
   <header class="app-header">
     <div class="header-left">
       <div class="brand-badge">
-        <span class="amd-icon">▲</span>
+        <span class="amd-icon" aria-hidden="true">▲</span>
         <div class="brand-titles">
-          <span class="brand-pre">AMD INTELLIGENT INDUSTRY</span>
+          <span class="brand-pre">FIELD NOTES / OPERATIONS</span>
           <h1 class="brand-name">Shift Handover Briefing</h1>
         </div>
       </div>
       <div class="asset-selector-pill">
-        <span class="asset-icon">⚙️</span>
+        <span class="asset-icon" aria-hidden="true">⚙</span>
         <div class="asset-details">
           <span class="asset-label">TARGET ASSET</span>
           <span class="asset-val" id="assetDisplayName">Hydraulic Press 07 (HP-750)</span>
@@ -49,8 +49,8 @@
       <button class="btn btn-outline" id="btnExportMd" onclick="exportMarkdown()">
         <span class="btn-icon">📥</span> Export .MD
       </button>
-      <button class="btn btn-ghost" id="btnReset" onclick="resetSession()" title="Clear session data">
-        <span class="btn-icon">🗑️</span>
+      <button class="btn btn-ghost" id="btnReset" onclick="resetSession()" title="Clear session data" aria-label="Clear session data">
+        <span class="btn-icon">⌫</span>
       </button>
     </div>
   </header>

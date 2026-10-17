@@ -47,6 +47,11 @@ AMD_API_KEY=your_token
 AMD_MODEL_ID=meta-llama/Llama-3.1-70B-Instruct
 ```
 
+For a hosted deployment, set `CORS_ORIGINS` to the exact browser origins that
+should be allowed and keep `MAX_UPLOAD_BYTES` sized for the largest approved
+source document. The service defaults to a 10 MiB upload limit and local-only
+origins.
+
 ---
 
 ## 📊 Prototype Benchmark Results

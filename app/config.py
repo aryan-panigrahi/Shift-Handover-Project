@@ -4,6 +4,7 @@ Application configuration for Shift Handover Briefing.
 
 import os
 from pathlib import Path
+from typing import List
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,6 +24,15 @@ class Settings(BaseModel):
     debug: bool = os.getenv("DEBUG", "true").lower() in ("true", "1")
     port: int = int(os.getenv("PORT", "8000"))
     host: str = os.getenv("HOST", "0.0.0.0")
+    max_upload_bytes: int = int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
+    cors_origins: List[str] = [
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:8000,http://127.0.0.1:8000"
+        ).split(",")
+        if origin.strip()
+    ]
 
     # SQLite
     database_path: str = os.getenv("DATABASE_PATH", str(DATA_DIR / "shift_handover.db"))

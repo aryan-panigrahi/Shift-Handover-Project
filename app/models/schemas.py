@@ -3,7 +3,7 @@ Pydantic data models and canonical schemas for Shift Handover Briefing.
 Complies with DATA_MODEL_AND_API.md and PRD.md.
 """
 
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
 
@@ -24,7 +24,7 @@ class SourceRef(BaseModel):
 class SourceDocument(BaseModel):
     source_id: str
     asset_id: str
-    kind: str  # "machine_log", "maintenance_note", "operator_audio", "manual"
+    kind: Literal["machine_log", "maintenance_note", "operator_audio", "manual"]
     filename: str
     content_hash: str
     captured_at: str
@@ -62,7 +62,7 @@ class ManualPassage(BaseModel):
 
 class HandoverItem(BaseModel):
     item_id: str
-    priority: str  # "high", "medium", "low"
+    priority: Literal["high", "medium", "low"]
     priority_score: float
     priority_factors: List[str] = Field(default_factory=list)
     what_changed: str
@@ -70,7 +70,7 @@ class HandoverItem(BaseModel):
     evidence_refs: List[Dict[str, Any]] = Field(default_factory=list)
     uncertainty: Optional[str] = None
     human_review_required: bool = True
-    status: str = "draft"  # "draft", "acknowledged", "deferred", "assigned"
+    status: Literal["draft", "acknowledged", "deferred", "assigned"] = "draft"
     assigned_to: Optional[str] = None
     operator_notes: Optional[str] = None
     edited_by_user: bool = False
@@ -102,13 +102,13 @@ class Handover(BaseModel):
 
 
 class HandoverItemUpdate(BaseModel):
-    priority: Optional[str] = None
-    what_changed: Optional[str] = None
-    suggested_check: Optional[str] = None
-    uncertainty: Optional[str] = None
-    status: Optional[str] = None
-    assigned_to: Optional[str] = None
-    operator_notes: Optional[str] = None
+    priority: Optional[Literal["high", "medium", "low"]] = None
+    what_changed: Optional[str] = Field(default=None, max_length=2000)
+    suggested_check: Optional[str] = Field(default=None, max_length=2000)
+    uncertainty: Optional[str] = Field(default=None, max_length=2000)
+    status: Optional[Literal["draft", "acknowledged", "deferred", "assigned"]] = None
+    assigned_to: Optional[str] = Field(default=None, max_length=200)
+    operator_notes: Optional[str] = Field(default=None, max_length=5000)
 
 
 class IngestionJob(BaseModel):

@@ -110,3 +110,34 @@ def test_end_to_end_api_flow():
         assert eval_data["high_priority_recall_pass"] is True
         assert eval_data["unsupported_claim_pass"] is True
         assert eval_data["all_targets_met"] is True
+
+
+def test_upload_boundaries_and_workflow_validation():
+    with TestClient(app) as client:
+        too_large = client.post(
+            "/api/sources",
+            files={"file": ("oversized.txt", b"x" * (10 * 1024 * 1024 + 1), "text/plain")},
+        )
+        assert too_large.status_code == 413
+
+        unsupported = client.post(
+            "/api/sources",
+            files={"file": ("payload.exe", b"not allowed", "application/octet-stream")},
+        )
+        assert unsupported.status_code == 415
+
+        unknown_asset = client.post(
+            "/api/sources",
+            data={"asset_id": "not-configured"},
+            files={"file": ("notes.txt", b"Operator note", "text/plain")},
+        )
+        assert unknown_asset.status_code == 404
+
+        bundle = client.post("/api/demo/load-bundle").json()
+        handover = client.get(f"/api/handovers/{bundle['handover_id']}").json()
+        item_id = handover["items"][0]["item_id"]
+        invalid_update = client.patch(
+            f"/api/handovers/{bundle['handover_id']}/items/{item_id}",
+            json={"status": "completed"},
+        )
+        assert invalid_update.status_code == 422
