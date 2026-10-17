@@ -139,7 +139,9 @@ def normalize_transcript_segments(transcript_data: Dict[str, Any], source_id: st
     """Converts audio transcript segments into operator observation events."""
     events = []
     segments = transcript_data.get("segments", [])
-    confidence = transcript_data.get("confidence", 0.94)
+    # The database keeps a numeric field; zero means no measured confidence was
+    # supplied, which is the case for the canned synthetic demo transcript.
+    confidence = transcript_data.get("confidence") or 0.0
 
     # If no segments, treat entire text as one event
     if not segments and transcript_data.get("text"):

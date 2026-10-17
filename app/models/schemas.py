@@ -46,7 +46,7 @@ class Event(BaseModel):
     summary: str
     signals: List[SignalReading] = Field(default_factory=list)
     source_refs: List[SourceRef] = Field(default_factory=list)
-    confidence: float = 1.0
+    confidence: Optional[float] = 1.0
     priority_signals: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -128,6 +128,9 @@ class HealthStatus(BaseModel):
     amd_model_id: str
     amd_accelerator: str
     latency_ms: Optional[float] = None
+    endpoint_reachable: bool = False
+    inference_completed_on_amd: bool = False
+    mode: str = "deterministic_fallback"
     active_session_assets: int = 1
 
 

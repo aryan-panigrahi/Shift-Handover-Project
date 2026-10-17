@@ -7,7 +7,7 @@ updated: 2026-10-13
 
 # Shift Handover Briefing — AMD Intelligent Industry
 
-A decision-support system that turns multimodal machine logs, maintenance notes, operator voice memos, and equipment manuals into an evidence-linked, prioritized shift handover running on AMD GPU infrastructure and ROCm.
+A decision-support system that turns multimodal machine logs, maintenance notes, operator voice memos, and equipment manuals into an evidence-linked, prioritized shift handover. An AMD-compatible remote inference path is supported; the default local demo uses deterministic fallback.
 
 > **One-line pitch:** The next shift knows what changed, what needs attention, why it matters, and where the evidence came from—in minutes, not after piecing together scattered notes.
 
@@ -36,9 +36,9 @@ The web application opens at **http://localhost:8000**.
 
 ## ⚡ AMD ROCm Workload
 
-- **Core Synthesis Inference:** Runs on open models (`meta-llama/Llama-3.1-70B-Instruct` or `mistralai/Mistral-7B-Instruct-v0.3`) hosted on AMD Instinct GPUs (MI300X / MI250) using vLLM or TGI on ROCm.
-- **Live Health Diagnostics:** The UI features a real-time AMD ROCm status pill backed by `/api/health` that probes the active inference endpoint and displays accelerator telemetry and latency.
-- **Verified Fallback Engine:** If the cloud endpoint is offline during presentation or testing, a verified deterministic synthesis engine guarantees 100% evidence citation grounding without crashing or hallucinating.
+- **Optional remote inference:** Set `AMD_ENDPOINT_URL` and credentials to use an OpenAI-compatible endpoint. The endpoint may be hosted on AMD ROCm, but this application does not independently verify the remote GPU model.
+- **Honest health states:** `/api/health` distinguishes endpoint reachability from completed inference. “Endpoint reachable” is not presented as proof of AMD hardware execution.
+- **Deterministic local fallback:** With no endpoint configured, the demo synthesizes from the supplied evidence locally. Its citations are validated against the loaded source IDs and locators.
 
 To configure an active AMD Developer Cloud endpoint, copy `.env.example` to `.env` or set environment variables:
 ```bash
@@ -64,7 +64,12 @@ Evaluated against the 10 labeled ground truth test cases defined in [Risks and E
 | **Recall@3 High Priority** | ≥ 80% | **100%** | **PASS** |
 | **Unsupported-Claim Rate** | 0.0% | **0.0%** | **PASS** |
 | **Input Coverage** | ≥ 80% | **100%** | **PASS** |
-| **Handover Draft Time** | < 120s | **1.42s** | **PASS** |
+| **Handover Draft Time** | < 120s | **1.42s\*** | **PASS** |
+
+These are results from a **10-case synthetic prototype benchmark** with keyword-based
+evaluation and seeded data. They are not industrial validation, production accuracy,
+or a guarantee of live-model performance. `1.42s` is the seeded evaluation parameter,
+not a measured latency claim for every deployment.
 
 Click the **Benchmark** button in the app header or call `POST /api/evaluate` to run the test suite live.
 
@@ -80,13 +85,13 @@ FastAPI Application ─────────────── SQLite (Databa
    │
    ├── 1. Ingestion: CSV/JSON telemetry, Markdown/TXT notes, PDF/MD manuals, WAV audio
    ├── 2. Normalization: Canonical Events with asset baseline checks (press-07)
-   ├── 3. Transcription Adapter: Audio player, waveform canvas & transcript editor
+   ├── 3. Transcription Adapter: Audio player, waveform canvas & transcript editor (seeded transcript is simulated)
    ├── 4. Manual Chunking & Retrieval: BM25-style lexical passage matcher with page/section anchors
    ├── 5. Prioritization Heuristic: Transparent scoring (Severity, Repetition, Deviation, Recency, Operator Flag)
    └── 6. AMD Synthesis: Structured schema verification, evidence linking, and human-review flags
           │
           ▼
-     AMD ROCm / vLLM Endpoint (Instinct MI300X / Llama-3.1-70B)
+     Optional OpenAI-compatible endpoint (AMD hosting must be configured and verified separately)
 ```
 
 ---
@@ -96,7 +101,7 @@ FastAPI Application ─────────────── SQLite (Databa
 The bundle seeds realistic industrial telemetry for **Hydraulic Press 07 (HP-750)** across Shift B (06:00 to 14:00):
 1. **Telemetry CSV (`shift_b_telemetry.csv`):** Motor temperature repeated excursions peaking at 91.4 °C (trip limit 85.0 °C), vibration surge to 4.8 mm/s RMS (trip limit 4.5 mm/s), and transient pressure drop to 162 bar.
 2. **Maintenance Notes (`maintenance_notes_shift_a.md`):** Filter cartridge replacement and oil top-up on Shift A; instructions to monitor differential pressure.
-3. **Operator Voice Memo (`operator_voice_memo.wav`):** Outgoing operator audio memo from Marco flagging a hot motor casing and high-pitch whine on the cooling circuit.
+3. **Operator Voice Memo (`operator_voice_memo.wav`):** Synthetic voice-like waveform paired with a canned transcript; it is not real speech recognition unless a remote transcription endpoint is configured.
 4. **Equipment Manual (`hydraulic_press_07_sop_manual.md`):** Section 4.2 (Page 14) describing heat exchanger descaling (SOP-M42) and Section 7.1 (Page 22) suction manifold cavitation checks.
 
 ---
@@ -106,7 +111,7 @@ The bundle seeds realistic industrial telemetry for **Hydraulic Press 07 (HP-750
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/` | Web application single-page interface |
-| `GET` | `/api/health` | Live AMD ROCm endpoint status, accelerator, and latency |
+| `GET` | `/api/health` | Endpoint reachability, inference completion state, configured model, and latency |
 | `GET` | `/api/assets` | Configured machine assets and baseline thresholds |
 | `GET` | `/api/sources` | Ingested source documents |
 | `POST` | `/api/sources` | Upload and parse CSV, JSON, MD, TXT, PDF, or WAV |
@@ -125,6 +130,14 @@ The bundle seeds realistic industrial telemetry for **Hydraulic Press 07 (HP-750
 ## 🛡️ Human-in-the-Loop Safety Boundary
 
 This product is an **operator decision-support aid**. It does not issue machine control signals, actuate valves, or authorize maintenance without qualification. Every recommendation is phrased as a suggested check under approved standard operating procedures (SOP), and all claims link to verified source evidence.
+
+## Public demo safety
+
+The hackathon prototype is local/demo-only by default. Upload, demo reset, and handover
+edit routes are intentionally unauthenticated and must not be exposed to an untrusted
+public network without adding authentication, authorization, rate limiting, and
+request-size controls appropriate to the deployment. Do not commit `.env`, database
+files, API keys, or uploaded source artifacts.
 
 ---
 

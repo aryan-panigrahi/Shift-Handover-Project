@@ -13,7 +13,7 @@ updated: 2026-10-13
 - **Traceability:** every event and recommendation links to its source; manual guidance includes page/section.
 - **Human-owned decisions:** the app drafts and organizes; operators approve and act under existing procedures.
 - **Hackathon-sized:** one asset, one shift window, a handful of input formats, seeded demo data.
-- **AMD is in the live path:** core extraction/synthesis inference runs on AMD Developer Cloud or event-approved AMD hardware via ROCm.
+- **AMD-compatible path:** core synthesis can use an OpenAI-compatible endpoint that may be hosted on AMD ROCm. The repository default is deterministic local fallback, and hardware requires independent host verification.
 
 ## 2. Proposed architecture
 
@@ -48,7 +48,7 @@ Suggested implementation choices are Python + FastAPI for the API and ingestion,
 
 ## 4. AMD workload
 
-The live demo should show the handover synthesis request going to an open model hosted on AMD GPU infrastructure with ROCm. If feasible, run embeddings or transcription on the same AMD instance too, but the requirement is met by a meaningful core workload only if the production demo path actually depends on AMD inference. Do not rely solely on a slide, precomputed response, or a local non-AMD model. Capture endpoint/model/runtime metadata in the project README and demo notes after the environment is confirmed.
+The app supports an OpenAI-compatible remote synthesis endpoint that may be hosted on AMD GPU infrastructure with ROCm. The default local demo does not use AMD inference. Health metadata distinguishes endpoint reachability from completed inference, and the app does not claim a specific AMD GPU without independent host verification. Do not present a configured URL alone as hardware proof.
 
 ## 5. Reliability and fallback
 

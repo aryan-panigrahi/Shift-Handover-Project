@@ -24,12 +24,14 @@ async def check_amd_health() -> Dict[str, Any]:
     if not url:
         return {
             "connected": False,
+            "endpoint_reachable": False,
+            "inference_completed_on_amd": False,
             "url": None,
             "model_id": settings.amd_model_id,
             "accelerator": settings.amd_accelerator_label,
             "latency_ms": None,
-            "mode": "deterministic_rocm_fallback",
-            "message": "AMD endpoint URL not configured. Using deterministic ROCm fallback engine."
+            "mode": "deterministic_fallback",
+            "message": "AMD endpoint URL not configured. Using deterministic local fallback."
         }
 
     start = time.perf_counter()
@@ -52,33 +54,39 @@ async def check_amd_health() -> Dict[str, Any]:
             if resp.status_code in (200, 204):
                 return {
                     "connected": True,
+                    "endpoint_reachable": True,
+                    "inference_completed_on_amd": False,
                     "url": url,
                     "model_id": settings.amd_model_id,
                     "accelerator": settings.amd_accelerator_label,
                     "latency_ms": latency,
-                    "mode": "live_amd_rocm",
-                    "message": f"Connected to AMD ROCm endpoint ({latency}ms)"
+                    "mode": "endpoint_reachable",
+                    "message": f"Endpoint reachable ({latency}ms); inference has not been verified."
                 }
             else:
                 return {
                     "connected": False,
+                    "endpoint_reachable": False,
+                    "inference_completed_on_amd": False,
                     "url": url,
                     "model_id": settings.amd_model_id,
                     "accelerator": settings.amd_accelerator_label,
                     "latency_ms": latency,
-                    "mode": "deterministic_rocm_fallback",
+                    "mode": "deterministic_fallback",
                     "message": f"Endpoint returned status HTTP {resp.status_code}"
                 }
     except Exception as e:
         latency = round((time.perf_counter() - start) * 1000, 2)
         return {
             "connected": False,
+            "endpoint_reachable": False,
+            "inference_completed_on_amd": False,
             "url": url,
             "model_id": settings.amd_model_id,
             "accelerator": settings.amd_accelerator_label,
             "latency_ms": latency,
-            "mode": "deterministic_rocm_fallback",
-            "message": f"AMD endpoint unreachable: {str(e)[:80]}. Using deterministic ROCm fallback."
+            "mode": "deterministic_fallback",
+            "message": f"AMD endpoint unreachable: {str(e)[:80]}. Using deterministic local fallback."
         }
 
 
@@ -94,7 +102,7 @@ async def synthesize_handover_items(
     """
     start_time = time.perf_counter()
     health = await check_amd_health()
-    is_live = health.get("connected", False)
+    is_live = health.get("endpoint_reachable", False)
 
     items: List[HandoverItem] = []
     unresolved_questions: List[str] = []
@@ -106,30 +114,38 @@ async def synthesize_handover_items(
             if live_items:
                 duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
                 metadata = {
-                    "inference_backend": settings.amd_accelerator_label,
+                    "inference_backend": "Configured AMD endpoint (hardware not independently verified)",
                     "model_id": settings.amd_model_id,
                     "endpoint_url": settings.amd_endpoint_url,
                     "endpoint_connected": True,
+                    "endpoint_reachable": True,
+                    "inference_completed_on_amd": True,
                     "latency_ms": duration_ms,
-                    "mode": "live_amd_inference",
+                    "mode": "live_inference_endpoint",
                     "request_id": f"req-amd-{uuid.uuid4().hex[:8]}"
                 }
                 return live_items, live_unresolved, metadata
-        except Exception:
-            # Fall through to deterministic synthesis
-            pass
+        except Exception as exc:
+            fallback_reason = f"Live endpoint response rejected: {str(exc)[:120]}"
+        else:
+            fallback_reason = "Live endpoint returned no citation-valid items"
+    else:
+        fallback_reason = "AMD endpoint not configured or unreachable"
 
     # Deterministic synthesis with strict evidence grounding
     items, unresolved_questions = _deterministic_synthesis(ranked_clusters, passages, asset_id)
     duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
     metadata = {
-        "inference_backend": settings.amd_accelerator_label,
+        "inference_backend": "Deterministic local evidence-grounded fallback",
         "model_id": settings.amd_model_id,
         "endpoint_url": settings.amd_endpoint_url or "Offline / Seeded Verification",
         "endpoint_connected": is_live,
+        "endpoint_reachable": is_live,
+        "inference_completed_on_amd": False,
         "latency_ms": duration_ms,
-        "mode": "live_amd_inference" if is_live else "verified_deterministic_grounding",
+        "mode": "deterministic_fallback",
+        "fallback_reason": fallback_reason,
         "request_id": f"req-amd-{uuid.uuid4().hex[:8]}"
     }
 
@@ -315,6 +331,13 @@ async def _call_amd_llm(
             raw_items = parsed.get("items", [])
             items = []
             for idx, ri in enumerate(raw_items, start=1):
+                evidence_refs = _validated_evidence_refs(
+                    ri.get("evidence_refs", []),
+                    ranked_clusters,
+                    passages,
+                )
+                if not evidence_refs:
+                    continue
                 items.append(HandoverItem(
                     item_id=f"item-llm-{idx:03d}",
                     priority=ri.get("priority", "medium"),
@@ -322,7 +345,7 @@ async def _call_amd_llm(
                     priority_factors=ri.get("priority_factors", []),
                     what_changed=ri.get("what_changed", ""),
                     suggested_check=ri.get("suggested_check", ""),
-                    evidence_refs=ri.get("evidence_refs", []),
+                    evidence_refs=evidence_refs,
                     uncertainty=ri.get("uncertainty"),
                     human_review_required=True,
                     status="draft"
@@ -330,3 +353,34 @@ async def _call_amd_llm(
             return items, parsed.get("unresolved_questions", [])
 
     return [], []
+
+
+def _validated_evidence_refs(
+    refs: Any,
+    ranked_clusters: List[Dict[str, Any]],
+    passages: List[ManualPassage],
+) -> List[Dict[str, Any]]:
+    """Keep only citations that point to currently supplied events or manual passages."""
+    if not isinstance(refs, list):
+        return []
+
+    valid_event_refs = {
+        (sref.source_id, sref.locator)
+        for cluster in ranked_clusters
+        for event in cluster["events"]
+        for sref in event.source_refs
+    }
+    valid_manual_refs = {
+        (passage.source_id, f"page:{passage.page}, section:{passage.section}")
+        for passage in passages
+    }
+    valid_refs = valid_event_refs | valid_manual_refs
+    validated: List[Dict[str, Any]] = []
+    for ref in refs:
+        if not isinstance(ref, dict):
+            continue
+        source_id = ref.get("source_id")
+        locator = ref.get("locator")
+        if (source_id, locator) in valid_refs:
+            validated.append(ref)
+    return validated

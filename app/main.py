@@ -114,6 +114,9 @@ async def get_health():
         amd_model_id=amd_info.get("model_id", settings.amd_model_id),
         amd_accelerator=amd_info.get("accelerator", settings.amd_accelerator_label),
         latency_ms=amd_info.get("latency_ms"),
+        endpoint_reachable=amd_info.get("endpoint_reachable", amd_info["connected"]),
+        inference_completed_on_amd=amd_info.get("inference_completed_on_amd", False),
+        mode=amd_info.get("mode", "deterministic_fallback"),
         active_session_assets=len(assets)
     )
 
@@ -499,7 +502,8 @@ async def load_synthetic_demo_bundle():
         metadata={
             "filepath": str(wav_file),
             "speaker": "Marco (Shift B Outgoing)",
-            "transcript": transcript_data
+            "transcript": transcript_data,
+            "provenance": "synthetic_demo_audio_with_canned_transcript"
         },
         raw_content=transcript_data["text"]
     )

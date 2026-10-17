@@ -125,8 +125,9 @@ TRANSCRIPT_JSON_CONTENT = """{
       "speaker": "Marco"
     }
   ],
-  "confidence": 0.94,
-  "engine": "Built-in Industrial Acoustic Adapter (ROCm compatible)"
+  "confidence": null,
+  "engine": "Synthetic demo transcript (canned; not speech recognition)",
+  "provenance": "synthetic_demo_audio_with_canned_transcript"
 }"""
 
 

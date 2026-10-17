@@ -34,11 +34,11 @@ async function checkAmdHealth() {
 
     if (data.amd_endpoint_connected) {
       pulseDot.style.background = "#10b981";
-      statusText.textContent = `AMD ROCm Online (${data.amd_model_id.split("/").pop()})`;
+      statusText.textContent = `Endpoint reachable (${data.amd_model_id.split("/").pop()})`;
       latencyTag.textContent = `${data.latency_ms || 18} ms`;
     } else {
       pulseDot.style.background = "#e0222a";
-      statusText.textContent = `AMD ROCm Verified (${data.amd_model_id.split("/").pop()})`;
+      statusText.textContent = "Local fallback mode";
       latencyTag.textContent = "Offline / Seeded";
     }
   } catch (err) {
@@ -66,8 +66,10 @@ async function loadSources() {
     if (res.ok) {
       appState.sources = await res.json();
       renderSourcesList();
-      document.getElementById("metricSources").textContent = appState.sources.length;
-      document.getElementById("tabSourcesBadge").textContent = appState.sources.length;
+      const metricSources = document.getElementById("metricSources");
+      if (metricSources) metricSources.textContent = appState.sources.length;
+      const tabSourcesBadge = document.getElementById("tabSourcesBadge");
+      if (tabSourcesBadge) tabSourcesBadge.textContent = appState.sources.length;
     }
   } catch (err) {
     console.error("Error loading sources:", err);
@@ -80,8 +82,10 @@ async function loadEvents() {
     if (res.ok) {
       appState.events = await res.json();
       renderTimeline();
-      document.getElementById("metricEvents").textContent = appState.events.length;
-      document.getElementById("tabEventsBadge").textContent = appState.events.length;
+      const metricEvents = document.getElementById("metricEvents");
+      if (metricEvents) metricEvents.textContent = appState.events.length;
+      const tabEventsBadge = document.getElementById("tabEventsBadge");
+      if (tabEventsBadge) tabEventsBadge.textContent = appState.events.length;
     }
   } catch (err) {
     console.error("Error loading events:", err);
@@ -176,7 +180,7 @@ async function generateHandover() {
   const container = document.getElementById("handoverItemsContainer");
   container.innerHTML = `<div style="text-align:center; padding:40px; color:#94a3b8;">
     <span style="font-size:32px; display:block; margin-bottom:12px;">⚡</span>
-    Synthesizing evidence-linked briefing on AMD ROCm...
+    Synthesizing evidence-linked briefing...
   </div>`;
 
   try {
@@ -568,9 +572,10 @@ function openAmdModal() {
 
   infoBox.innerHTML = `
     <div style="font-size:13px; line-height:1.6; margin-bottom:16px;">
-      <strong>AMD Accelerator:</strong> ${h.amd_accelerator || "AMD ROCm / Instinct MI300X"}<br>
+      <strong>AMD Accelerator:</strong> ${h.amd_accelerator || "Hardware not verified"}<br>
       <strong>Model:</strong> ${h.amd_model_id || "meta-llama/Llama-3.1-70B-Instruct"}<br>
-      <strong>Endpoint Connectivity:</strong> ${h.amd_endpoint_connected ? '<span style="color:#10b981;">Online & Connected</span>' : '<span style="color:#e0222a;">Offline (Running ROCm-Verified Fallback Engine)</span>'}<br>
+      <strong>Endpoint Reachability:</strong> ${h.endpoint_reachable ? '<span style="color:#10b981;">Reachable</span>' : '<span style="color:#e0222a;">Not reachable</span>'}<br>
+      <strong>AMD inference completed:</strong> ${h.inference_completed_on_amd ? '<span style="color:#10b981;">Reported by configured endpoint</span>' : '<span style="color:#e0222a;">Not verified</span>'}<br>
       <strong>Roundtrip Latency:</strong> ${h.latency_ms ? `${h.latency_ms} ms` : "Local / Zero-wait"}
     </div>
   `;

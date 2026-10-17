@@ -41,7 +41,10 @@ class Settings(BaseModel):
     amd_endpoint_url: str = os.getenv("AMD_ENDPOINT_URL", "").strip()
     amd_api_key: str = os.getenv("AMD_API_KEY", "").strip()
     amd_model_id: str = os.getenv("AMD_MODEL_ID", "meta-llama/Llama-3.1-70B-Instruct")
-    amd_accelerator_label: str = "AMD ROCm / Instinct MI300X"
+    amd_accelerator_label: str = os.getenv(
+        "AMD_ACCELERATOR_LABEL",
+        "AMD ROCm (hardware not verified)"
+    )
 
     # Transcription
     transcription_adapter: str = os.getenv("TRANSCRIPTION_ADAPTER", "mock_whisper")

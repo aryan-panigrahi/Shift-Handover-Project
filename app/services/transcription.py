@@ -110,6 +110,7 @@ async def transcribe_audio(
     return {
         "text": default_text,
         "segments": segments,
-        "confidence": 0.94,
-        "engine": "Built-in Industrial Acoustic Adapter (ROCm compatible fallback)"
+        "confidence": None,
+        "engine": "Synthetic demo transcript (canned; not speech recognition)",
+        "provenance": "synthetic_demo_audio_with_canned_transcript"
     }
